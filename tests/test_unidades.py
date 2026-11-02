@@ -40,6 +40,8 @@ def test_detector_separa_contiguos_y_no_deja_densidad_baja():
     assert all(c.densidad_puntos_ha >= 20 for c in incluidos)
     assert all(c.max_gap_m <= 300 for c in incluidos)
     assert max(c.area_ha for c in incluidos) < 100
+    assert all(c.aspect_ratio >= 1.0 for c in incluidos)
+    assert all(c.cuenta_ha_valida for c in incluidos)
 
 
 def test_detector_no_parte_campo_grande_compacto():
@@ -60,6 +62,8 @@ def test_camino_largo_no_cuenta_como_campo():
                for c in campos)
     assert sum(c.cuenta_ha for c in campos) == 0.0
     assert any('camino' in c.motivos[0] for c in campos)
+    assert all(c.aspect_ratio > 1.0 for c in campos)
+    assert all(c.subcategoria == 'NO_ES_CAMPO' for c in campos)
 
 
 def test_detector_marca_disperso_por_densidad_o_hueco():

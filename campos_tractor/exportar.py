@@ -32,8 +32,10 @@ def _columnas_campos() -> list[str]:
             't_inicio', 't_fin', 'area_ha', 'perimetro_m', 'estado',
             'confianza', 'motivo', 'causa_fragmento', 'categoria',
             'requiere_revision', 'cuenta_ha', 'diagnostico_grande',
-            'parece_campo', 'version_algoritmo', 'epsg_utm', 'solidez',
-            'compacidad', 'densidad_puntos_ha', 'coherencia_orientacion',
+            'parece_campo', 'subcategoria', 'metrica_detonante',
+            'cuenta_ha_valida', 'version_algoritmo', 'epsg_utm', 'solidez',
+            'compacidad', 'aspect_ratio', 'densidad_puntos_ha',
+            'coherencia_orientacion',
             'max_gap_m', 'orientacion', 'speed_p50', 'speed_p90',
             'state_cobertura', 'frac_working', 'frac_idle', 'frac_transport',
             'unidades', 'descartado_area', 'en_muestra']

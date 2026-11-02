@@ -17,7 +17,9 @@ from shapely.geometry import LineString, MultiPoint, Point, Polygon, MultiPolygo
 from shapely.ops import transform as shapely_transform, unary_union
 
 from ._compat import _epsg_utm
-from .estados import CFG_DETECCION, _clasificar
+from .estados import (CFG_DETECCION, _clasificar,
+                      clasificar_cobertura_estricta)
+from .metricas import calcular_aspect_ratio
 from .proyeccion import invertir_xy, origen_desde_primera
 
 CFG_CAMPOS = {
@@ -40,6 +42,7 @@ CFG_CAMPOS = {
     'closing_m': 2.0,
     # Y4: fusión jerárquica.
     'union_dist_m': 0.0,
+    'union_query_buffer_m': 0.0,
     'union_overlap_min': 0.08,
     'union_gap_s': 300.0,
     'union_orient_deg': 30.0,
@@ -147,6 +150,7 @@ class Campo:
     perimetro_m: float
     solidez: float
     compacidad: float
+    aspect_ratio: float
     orientacion: float
     coherencia: float
     densidad_puntos_ha: float
@@ -168,6 +172,9 @@ class Campo:
     parece_campo: str
     rutas_hash: str
     ruta_principal: str
+    subcategoria: str = ''
+    metrica_detonante: str = ''
+    cuenta_ha_valida: bool = False
     version_algoritmo: str = 'campos-tractor'
 
     def to_dict(self) -> dict:
@@ -199,6 +206,10 @@ class Campo:
             'epsg_utm': int(self.epsg_utm),
             'solidez': round(float(self.solidez), 3),
             'compacidad': round(float(self.compacidad), 3),
+            'aspect_ratio': round(float(self.aspect_ratio), 3),
+            'subcategoria': self.subcategoria,
+            'metrica_detonante': self.metrica_detonante,
+            'cuenta_ha_valida': int(bool(self.cuenta_ha_valida)),
             'densidad_puntos_ha': round(float(self.densidad_puntos_ha), 1),
             'coherencia_orientacion': round(float(self.coherencia), 3),
             'max_gap_m': round(float(self.max_gap_m), 1),
@@ -446,10 +457,22 @@ def fusionar_unidades(unidades: list[Unidad], cfg: dict) -> tuple[list[Campo], l
         return [], []
     geoms = [u.core_wgs84 if u.core_wgs84 is not None else u.geometry_wgs84 for u in unidades]
     arbol = STRtree(geoms)
+    # Solo se consultan geometrías que se tocan o se cruzan. El buffer de
+    # 0,0002° anterior (~22 m) generaba cientos de miles de pares que luego
+    # fallaban por 'sin solape'. Si union_dist_m > 0 se conserva la búsqueda
+    # por cercanía equivalente en grados; si no, la consulta es exacta.
+    margen_m = max(float(cfg.get('union_dist_m', 0.0)),
+                   float(cfg.get('union_query_buffer_m', 1.0)))
+    distancia_grados = max(0.0, margen_m) / 111_320.0
     aristas = []
     rechazos = []
     for i, a in enumerate(unidades):
-        for j in arbol.query((a.core_wgs84 if a.core_wgs84 is not None else a.geometry_wgs84).buffer(0.0002)):
+        consulta = geoms[i]
+        if consulta is None:
+            continue
+        if distancia_grados > 0:
+            consulta = consulta.buffer(distancia_grados)
+        for j in arbol.query(consulta, predicate='intersects'):
             j = int(j)
             if j <= i:
                 continue
@@ -556,6 +579,7 @@ def _crear_campo(unidades: list[Unidad], cfg: dict) -> Campo | None:
     density = n_puntos / metricas['area_ha'] if metricas['area_ha'] > 0 else 0.0
     campos_rutas = sorted({u.ruta_hash for u in unidades})
     principal = max(unidades, key=lambda u: u.n_puntos).ruta_hash
+    aspecto = calcular_aspect_ratio(geom_utm)
     campo = Campo(
         id_estable=_hash('|'.join(sorted(u.id_unidad for u in unidades))),
         campo_id=0, geometry=geom_wgs, geometry_utm=geom_utm, epsg_utm=epsg,
@@ -566,6 +590,7 @@ def _crear_campo(unidades: list[Unidad], cfg: dict) -> Campo | None:
         t_fin=t_fin.isoformat() if t_fin is not None else '',
         area_ha=metricas['area_ha'], perimetro_m=float(geom_utm.length),
         solidez=metricas['solidez'], compacidad=metricas['compacidad'],
+        aspect_ratio=aspecto,
         orientacion=orientacion, coherencia=coherencia,
         densidad_puntos_ha=density, max_gap_m=max_gap,
         speed_p50=_pondera(unidades, 'speed_p50'),
@@ -595,13 +620,39 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
     campo.diagnostico_grande = ''
     campo.requiere_revision = 0
     campo.cuenta_ha = 0.0
-    # Compuerta de forma: un trazado alargado y estrecho es un camino, no un
-    # campo, aunque tenga densidad suficiente. No cuenta hectáreas.
+    campo.cuenta_ha_valida = False
+    campo.subcategoria = ''
+    campo.metrica_detonante = ''
+    # Reglas estrictas de caminos, ruido y trabajo agrícola.
+    dictamen = clasificar_cobertura_estricta(
+        area_ha=campo.area_ha,
+        n_puntos=campo.n_puntos,
+        n_unidades=campo.n_unidades,
+        horas=campo.horas,
+        solidez=campo.solidez,
+        compacidad=campo.compacidad,
+        densidad_puntos_ha=campo.densidad_puntos_ha,
+        coherencia_orientacion=campo.coherencia,
+        aspect_ratio=campo.aspect_ratio,
+    )
+    if dictamen is not None:
+        campo.subcategoria = dictamen['subcategoria']
+        campo.metrica_detonante = dictamen['metrica_detonante']
+        if dictamen['categoria_final'] == 'TRAYECTO_DISPERSO':
+            campo.estado = 'TRAYECTO_DISPERSO'
+            campo.motivos = [dictamen['motivo']]
+            campo.causa_fragmento = dictamen['causa']
+            campo.parece_campo = 'NO'
+            return
+    # Compuerta de forma histórica: un trazado alargado y estrecho es un
+    # camino, no un campo, aunque tenga densidad suficiente.
     if campo.compacidad < float(cfg['compacidad_min']):
         campo.estado = 'TRAYECTO_DISPERSO'
         campo.motivos = [f'forma lineal (compacidad {campo.compacidad:.3f} '
                          f'< {cfg["compacidad_min"]}): posible camino']
         campo.causa_fragmento = 'forma_lineal'
+        campo.subcategoria = 'NO_ES_CAMPO'
+        campo.metrica_detonante = 'compacidad'
         campo.parece_campo = 'NO'
         return
     # Y1: compuertas expl?citas (densidad y hueco m?ximo).
@@ -610,6 +661,8 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
         campo.motivos = [f'densidad {campo.densidad_puntos_ha:.1f} pts/ha '
                          f'< {cfg["densidad_min_puntos_ha"]}']
         campo.causa_fragmento = 'densidad_baja'
+        campo.subcategoria = 'NO_ES_CAMPO'
+        campo.metrica_detonante = 'densidad_puntos_ha'
         campo.parece_campo = 'NO'
         return
     if campo.max_gap_m > float(cfg['max_gap_m']):
@@ -617,11 +670,17 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
         campo.motivos = [f'hueco m?ximo {campo.max_gap_m:.0f} m '
                          f'> {cfg["max_gap_m"]:.0f} m']
         campo.causa_fragmento = 'hueco_muestreo'
+        campo.subcategoria = 'NO_ES_CAMPO'
+        campo.metrica_detonante = 'max_gap_m'
         campo.parece_campo = 'NO'
         return
     estado, motivos = _clasificar(
         campo.area_ha, campo.n_puntos, campo.solidez, campo.compacidad,
         campo.coherencia, campo.densidad_puntos_ha, 1.0, cfg)
+    if (dictamen is not None and dictamen['categoria_final'] == 'CAMPO'
+            and estado != 'NO_ES_CAMPO'):
+        estado = 'CAMPO_PROBABLE'
+        motivos = [dictamen['motivo']]
     # Base/patio.
     evidencias = []
     if campo.n_sesiones >= int(cfg['base_min_sesiones']):
@@ -642,6 +701,8 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
         motivos = ['posible base/patio: ' + '; '.join(evidencias)]
     campo.estado = estado
     campo.motivos = motivos
+    if estado == 'NO_ES_CAMPO':
+        campo.subcategoria = 'NO_ES_CAMPO'
     if estado == 'CAMPO_FRAGMENTO':
         if campo.area_ha < float(cfg['area_fragmento_ha']):
             campo.causa_fragmento = 'area_pequena'
@@ -663,6 +724,8 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
             'revisi?n humana antes de contar hect?reas']
     else:
         campo.cuenta_ha = campo.area_ha if estado != 'NO_ES_CAMPO' else 0.0
+    campo.cuenta_ha_valida = bool(campo.cuenta_ha > 0
+                                  and estado != 'TRAYECTO_DISPERSO')
     consistencia = min(1.0, campo.n_unidades / 2.0)
     working = campo.frac_working if campo.state_cobertura >= 0.20 else 0.5
     campo.confianza = max(0.0, min(1.0,
@@ -718,7 +781,7 @@ def fusionar_por_rutas(unidades: list[Unidad], cfg: dict) -> tuple[list[Campo], 
         return x
 
     for i, campo in enumerate(campos):
-        for j in arbol.query(campo.geometry):
+        for j in arbol.query(campo.geometry, predicate='intersects'):
             j = int(j)
             if j <= i or campos[j].ruta_principal == campo.ruta_principal:
                 continue

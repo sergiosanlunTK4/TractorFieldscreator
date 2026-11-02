@@ -30,6 +30,7 @@ etiquetas de retención.
 |---|---:|---|
 | `union_overlap_min` | 0,08 | Solape mínimo de huellas de puntos. |
 | `union_dist_m` | 0 | Sin solape no se fusiona por cercanía. |
+| `union_query_buffer_m` | 0 | Margen extra de la consulta `STRtree`; 0 usa intersección exacta. |
 | `union_gap_s` | 300 | Continuidad temporal para contigüidad. |
 | `union_orient_deg` | 30 | Diferencia máxima de orientación. |
 | `union_solidez_min` | 0,30 | Solidez mínima al unir. |
@@ -46,6 +47,16 @@ etiquetas de retención.
 | `compacidad_min` | 0,025 | Por debajo: forma lineal (camino), no cuenta hectáreas. |
 | `grande_area_ha` | 100 | `CAMPO_GRANDE` con revisión pendiente. |
 | `area_descarte_ha` | 0,10 | Descarte de polígonos pequeños. |
+
+### Reglas estrictas de clasificación
+
+| Regla | Condición | Resultado |
+|---|---|---|
+| Camino | `solidez < 0,25` o `compacidad < 0,08`, y `n_unidades <= 2`, `aspect_ratio > 6` o `coherencia >= 0,95` | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
+| Esfuerzo insuficiente | `n_puntos < 40`, `horas < 0,15` y `densidad < 70` o `n_unidades == 1` | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
+| Micro-ruido | `cuenta_ha < 0,10` y `solidez < 0,40` | `TRAYECTO_DISPERSO` / `RUIDO_COBERURA` |
+| Campo | `solidez >= 0,25`, `compacidad >= 0,08` y (`cuenta_ha >= 0,60` o 3 unidades + 40 puntos) | `CAMPO` / `TRABAJO_AGRICOLA` |
+| Fragmento | Resto con forma aceptable | `CAMPO_FRAGMENTO` / `TRABAJO_AGRICOLA` |
 
 ## Pares de revisión
 

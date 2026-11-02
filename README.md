@@ -76,14 +76,33 @@ El comando también se imprime al final de `campos-tractor` cuando existe
 
 - `campos`: campos no dispersos; `cuenta_ha=0` para no-campo y `CAMPO_GRANDE`.
 - `campos_descartados`: área <0,10 ha.
-- `trayectos_dispersos`: densidad <20 pts/ha, hueco >300 m o forma lineal
-  (caminos); no suman hectáreas.
+- `trayectos_dispersos`: densidad <20 pts/ha, hueco >300 m, forma lineal
+  (caminos) o micro-ruido; no suman hectáreas.
 - `unidades`: bloques temporales de trabajo.
 - `trazas`: una línea por unidad, sin cruzar huecos >T.
 - `trazas_puntos`: puntos submuestreados con timestamp.
 - `pares_contiguos`: pares consecutivos para revisión.
 - `puntos_fuera_mexico`: filtro geográfico de respaldo.
 - `revision` y `revision_pares`: tablas persistentes fuera de `campos`.
+
+## Clasificación estricta
+
+Cada cobertura se evalúa con estas señales, en orden:
+
+1. **Camino / acotamiento:** `solidez < 0,25` o `compacidad < 0,08`, y además
+   `n_unidades <= 2`, `aspect_ratio > 6` o `coherencia >= 0,95`.
+2. **Esfuerzo insuficiente:** `n_puntos < 40` y `horas < 0,15`, con
+   `densidad < 70 pts/ha` o una sola unidad.
+3. **Micro-ruido:** `cuenta_ha < 0,10` y `solidez < 0,40`.
+4. **Campo / fragmento:** con `solidez >= 0,25` y `compacidad >= 0,08`; es
+   `CAMPO` si `cuenta_ha >= 0,60` o hay al menos 3 unidades y 40 puntos.
+
+Las salidas incorporan:
+
+- `aspect_ratio`: largo/ancho del Minimum Bounding Box.
+- `subcategoria`: `TRABAJO_AGRICOLA`, `NO_ES_CAMPO` o `RUIDO_COBERURA`.
+- `metrica_detonante`: señal que decidió el filtro.
+- `cuenta_ha_valida`: si la cobertura cuenta hectáreas.
 
 ## Parámetros
 

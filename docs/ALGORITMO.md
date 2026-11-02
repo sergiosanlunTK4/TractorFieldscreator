@@ -7,9 +7,9 @@ CSV contrato
   → cargar_dataframe (timestamp UTC, lat, lon, machine_id)
   → filtrar_mexico
   → detectar_unidades (tiempo primero)
-  → fusionar_por_rutas / fusionar_unidades (solape + forma)
-  → compuertas de densidad y hueco
-  → estados y pares contiguos
+  → fusionar_por_rutas / fusionar_unidades (STRtree + solape + forma)
+  → compuertas de densidad, hueco y geometría lineal
+  → clasificación estricta y pares contiguos
   → exportar (GeoPackage, CSV, QGZ opcional)
 ```
 
@@ -50,6 +50,19 @@ CSV contrato
 4. Compacidad mínima 0,025: una traza alargada y estrecha se trata como
    `TRAYECTO_DISPERSO` (camino), no como campo.
 5. `CAMPO_GRANDE` >100 ha requiere revisión; `cuenta_ha=0`.
+
+## Clasificación estricta
+
+`clasificar_cobertura_estricta()` en `estados.py` aplica, en orden:
+
+1. Geometría lineal: camino/acotamiento.
+2. Esfuerzo insuficiente: pocos puntos y menos de 9 minutos.
+3. Micro-ruido: área mínima con baja solidez.
+4. Campo o fragmento con forma aceptable.
+
+El `aspect_ratio` se calcula con el Minimum Bounding Box en `metricas.py` y se
+guarda en cada campo. La fusión usa `STRtree` con intersección real y un margen
+de 1 m para absorber diferencias de proyección.
 
 ## Identificadores
 

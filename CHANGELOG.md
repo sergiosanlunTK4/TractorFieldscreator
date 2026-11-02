@@ -11,6 +11,14 @@
 - Compuertas: densidad mínima 20 pts/ha; hueco máximo 300 m; forma lineal
   (compacidad <0,025) se marca `TRAYECTO_DISPERSO` para no contar caminos;
   campo grande 100 ha (revisión humana, no cuenta hectáreas); descarte 0,10 ha.
+- Clasificación estricta: `aspect_ratio` del Minimum Bounding Box, reglas de
+  camino (`solidez <0,25` o `compacidad <0,08`), esfuerzo insuficiente,
+  micro-ruido y campo/fragmento. Nuevas columnas `aspect_ratio`,
+  `subcategoria`, `metrica_detonante` y `cuenta_ha_valida`.
+- Fusión: consulta `STRtree` con intersección real y buffer de 1 m en lugar de
+  un buffer fijo de ~22 m; se eliminan decenas de miles de pares falsos.
+- CLI: omite archivos sin puntos dentro de México y los reporta en
+  `archivos_omitidos`.
 - Pares contiguos: |gap| ≤ 600 s y distancia entre inicios ≤ 150 m.
 - Filtro México de respaldo: caja 14,5–32,8 N / -118,5 a -86,5 O, colchón 10 km.
 

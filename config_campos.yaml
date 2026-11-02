@@ -18,6 +18,7 @@ forma:
 
 fusion:
   union_dist_m: 0
+  union_query_buffer_m: 0
   union_overlap_min: 0.08
   union_gap_s: 300
   union_orient_deg: 30

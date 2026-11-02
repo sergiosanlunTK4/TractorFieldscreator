@@ -101,7 +101,7 @@ def main() -> int:
     cache = Path(args.salida) / 'cache_unidades'
     inicio = time.perf_counter()
     tracemalloc.start()
-    frames, unidades, fuera, tiempos = [], [], [], []
+    frames, unidades, fuera, tiempos, omitidos = [], [], [], [], []
     clave_id_cfg = _hash_cfg(cfg)
     for ruta in archivos:
         t0 = time.perf_counter()
@@ -110,6 +110,18 @@ def main() -> int:
             ruta_hash = hashlib.sha256(f'{ruta.name}|{maquina}'.encode()).hexdigest()[:16]
             limpio, fuera_ruta, resumen_filtro = filtrar_mexico(frame, ruta_hash)
             fuera.extend(fuera_ruta)
+            if len(limpio) < 2:
+                omitidos.append({'archivo': ruta.name,
+                                 'maquina_hash': ruta_hash,
+                                 'motivo': 'sin_puntos_mexico'})
+                tiempos.append({'archivo': ruta.name,
+                                'maquina_hash': ruta_hash,
+                                'n_puntos': 0,
+                                'n_fuera': len(fuera_ruta),
+                                'n_unidades': 0,
+                                'omitido': 'sin_puntos_mexico',
+                                'segundos': round(time.perf_counter() - t0, 2)})
+                continue
             frames.append(limpio)
             clave_id = f'{_hash_archivo(ruta)}_{maquina}_{clave_id_cfg}'
             unidades_cache = None if args.sin_cache else _cargar_cache(clave_id, cache)
@@ -125,6 +137,9 @@ def main() -> int:
                             'n_fuera': len(fuera_ruta),
                             'n_unidades': len(unidades_cache) if unidades_cache is not None else len(nuevas),
                             'segundos': round(time.perf_counter() - t0, 2)})
+    if not frames:
+        print('No hay puntos dentro de México; no se generó salida.')
+        return 1
     t_unidades = time.perf_counter()
     campos, rechazos = fusionar_por_rutas(unidades, cfg)
     t_fusion = time.perf_counter()
@@ -154,6 +169,7 @@ def main() -> int:
                     'total_s': round(t_export - inicio, 2),
                     'por_archivo': tiempos},
         'rechazos_fusion': len(rechazos),
+        'archivos_omitidos': omitidos,
         'verificacion': salida['verificacion'],
     }
     actual, pico = tracemalloc.get_traced_memory()

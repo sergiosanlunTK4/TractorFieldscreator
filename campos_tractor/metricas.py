@@ -20,7 +20,30 @@ from typing import Iterable, Sequence
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from shapely import make_valid, normalize
+from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
+
+
+def calcular_aspect_ratio(geometria: BaseGeometry | None) -> float:
+    """Relación largo/ancho del Minimum Bounding Box (MBB).
+
+    ``1.0`` para geometrías vacías o sin extensión suficiente. El resultado se
+    usa como señal de forma: valores altos indican trazas lineales (caminos).
+    """
+    if geometria is None or geometria.is_empty:
+        return 1.0
+    mrr = geometria.minimum_rotated_rectangle
+    if isinstance(mrr, Polygon):
+        coords = list(mrr.exterior.coords)
+        if len(coords) >= 3:
+            s1 = float(np.linalg.norm(
+                np.array(coords[0][:2]) - np.array(coords[1][:2])))
+            s2 = float(np.linalg.norm(
+                np.array(coords[1][:2]) - np.array(coords[2][:2])))
+            min_s, max_s = min(s1, s2), max(s1, s2)
+            if min_s > 0:
+                return float(max_s / min_s)
+    return 1.0
 
 
 def geometria_valida(geom: BaseGeometry | None) -> BaseGeometry | None:
