@@ -113,7 +113,7 @@ def clasificar_cobertura_estricta(
         metrica = 'cuenta_ha' if area_ha < 0.10 else 'solidez'
         return {
             'categoria_final': 'TRAYECTO_DISPERSO',
-            'subcategoria': 'RUIDO_COBERURA',
+            'subcategoria': 'RUIDO_COBERTURA',
             'cuenta_ha_valida': False,
             'metrica_detonante': metrica,
             'causa': 'ruido_cobertura',

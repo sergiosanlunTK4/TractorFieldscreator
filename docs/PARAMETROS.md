@@ -54,7 +54,7 @@ etiquetas de retención.
 |---|---|---|
 | Camino | `solidez < 0,25` o `compacidad < 0,08`, y `n_unidades <= 2`, `aspect_ratio > 6` o `coherencia >= 0,95` | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
 | Esfuerzo insuficiente | `n_puntos < 40`, `horas < 0,15` y `densidad < 70` o `n_unidades == 1` | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
-| Micro-ruido | `cuenta_ha < 0,10` y `solidez < 0,40` | `TRAYECTO_DISPERSO` / `RUIDO_COBERURA` |
+| Micro-ruido | `cuenta_ha < 0,10` y `solidez < 0,40` | `TRAYECTO_DISPERSO` / `RUIDO_COBERTURA` |
 | Campo | `solidez >= 0,25`, `compacidad >= 0,08` y (`cuenta_ha >= 0,60` o 3 unidades + 40 puntos) | `CAMPO` / `TRABAJO_AGRICOLA` |
 | Fragmento | Resto con forma aceptable | `CAMPO_FRAGMENTO` / `TRABAJO_AGRICOLA` |
 

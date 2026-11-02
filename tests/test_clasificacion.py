@@ -39,7 +39,7 @@ def test_regla_3_ruido_de_cobertura():
         solidez=0.30, compacidad=0.20, densidad_puntos_ha=2000.0,
         coherencia_orientacion=0.70, aspect_ratio=1.5)
     assert r['categoria_final'] == 'TRAYECTO_DISPERSO'
-    assert r['subcategoria'] == 'RUIDO_COBERURA'
+    assert r['subcategoria'] == 'RUIDO_COBERTURA'
     assert r['cuenta_ha_valida'] is False
 
 

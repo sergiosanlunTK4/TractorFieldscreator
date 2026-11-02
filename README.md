@@ -100,7 +100,7 @@ Cada cobertura se evalúa con estas señales, en orden:
 Las salidas incorporan:
 
 - `aspect_ratio`: largo/ancho del Minimum Bounding Box.
-- `subcategoria`: `TRABAJO_AGRICOLA`, `NO_ES_CAMPO` o `RUIDO_COBERURA`.
+- `subcategoria`: `TRABAJO_AGRICOLA`, `NO_ES_CAMPO` o `RUIDO_COBERTURA`.
 - `metrica_detonante`: señal que decidió el filtro.
 - `cuenta_ha_valida`: si la cobertura cuenta hectáreas.
 
