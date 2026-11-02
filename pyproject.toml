@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "campos-tractor"
+version = "0.4.0"
+description = "Detección y agrupación de campos de tractor a partir de trayectorias"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Propietario"}
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "scipy>=1.10",
+  "scikit-learn>=1.3",
+  "shapely>=2.0",
+  "pyproj>=3.5",
+  "geopandas>=1.0",
+  "fiona>=1.9",
+  "pyogrio>=0.7",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+campos-tractor = "campos_tractor.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["campos_tractor*"]

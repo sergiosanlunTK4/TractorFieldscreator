@@ -1,0 +1,42 @@
+# Configuración del detector: tiempo primero, polígono después.
+version: campos-tractor
+
+tiempo:
+  trabajo_gap_s: 300        # 5 min: puente máximo entre puntos de trabajo
+  vel_min_kmh: 1.0
+  vel_max_kmh: 15.0
+  paso_max_m: 350
+  giro_ventana: 3
+  giro_sostenido_deg: 220
+  unidad_min_puntos: 10
+
+forma:
+  buffer_factor: 0.20       # radio = factor * mediana de espaciado
+  buffer_min_m: 3
+  buffer_max_m: 5
+  closing_m: 2
+
+fusion:
+  union_dist_m: 0
+  union_overlap_min: 0.08
+  union_gap_s: 300
+  union_orient_deg: 30
+  union_solidez_min: 0.30
+  union_compacidad_min: 0.020
+  union_densidad_min: 20
+  union_max_extension_m: 10000
+  union_max_area_ha: 2000
+
+compuertas:
+  densidad_min_puntos_ha: 20
+  max_gap_m: 300
+  grande_area_ha: 100
+  area_descarte_ha: 0.10
+
+base:
+  base_min_sesiones: 20
+  base_min_dias: 15
+  base_min_horas: 20
+  base_speed_max: 3.0
+  base_frac_idle_min: 0.30
+  base_min_evidencias: 3

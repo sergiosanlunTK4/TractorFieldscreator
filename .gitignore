@@ -1,0 +1,31 @@
+# Lista permitida: solo código, pruebas, documentación y configuración.
+*
+!*/
+!*.py
+!*.md
+!*.toml
+!*.yaml
+!*.yml
+!*.txt
+!.gitignore
+
+# Nunca datos, salidas, cachés ni secretos.
+*.gpkg
+*.qgz
+*.sqlite
+*.sqlite3
+*.csv
+*.parquet
+*.pkl
+.env
+.env.*
+datos/
+data/
+output/
+salidas/
+versiones/
+cache*/
+__pycache__/
+.pytest_cache/
+.venv/
+pip-*/
