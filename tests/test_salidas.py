@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from campos_tractor.salidas import resumen_salidas, separar_por_estado
+from campos_tractor.salidas import (detectar_campos_por_estado,
+                                    resumen_salidas, separar_por_estado)
+from campos_tractor.sintetico import SEMILLA, generar
 
 
 def _campo(estado, area):
@@ -29,3 +31,16 @@ def test_separar_por_estado():
     assert resumen['campos']['n'] == 1
     assert resumen['campos']['cuenta_ha'] == 2.0
     assert resumen['campos_fragmento']['cuenta_ha'] == 1.0
+
+
+def test_detectar_por_estado_sin_archivos():
+    escenario = [e for e in generar(SEMILLA) if e.nombre == 'contiguos_10m'][0]
+    resultado = detectar_campos_por_estado(escenario.frame, escenario.nombre)
+    assert {'campos', 'campos_fragmento', 'campos_dudosos',
+            'trayectos_dispersos', 'unidades', 'rechazos', 'resumen'} <= set(
+        resultado)
+    assert len(resultado['campos']) == resultado['resumen']['campos']['n']
+    assert all(c.estado == 'CAMPO_PROBABLE' for c in resultado['campos'])
+    assert all(c.estado == 'CAMPO_FRAGMENTO'
+               for c in resultado['campos_fragmento'])
+    assert all(c.estado == 'DUDOSO' for c in resultado['campos_dudosos'])
