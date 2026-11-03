@@ -35,7 +35,7 @@ compuertas:
   area_descarte_ha: 0.10
   ancho_min_campo_m: 25.0
   aspect_ratio_max: 6.0
-  compacidad_fragmento_min: 0.04
+  compacidad_fragmento_min: 0.05
 
 base:
   base_min_sesiones: 20

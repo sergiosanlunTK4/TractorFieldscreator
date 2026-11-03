@@ -58,7 +58,7 @@ CFG_CAMPOS = {
     'area_descarte_ha': 0.10,
     'ancho_min_campo_m': 25.0,
     'aspect_ratio_max': 6.0,
-    'compacidad_fragmento_min': 0.04,
+    'compacidad_fragmento_min': 0.05,
     # Base/patio.
     'base_min_sesiones': 20,
     'base_min_dias': 15,
@@ -706,7 +706,7 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
     # Compuerta adicional para fragmentos muy irregulares: si la compacidad es
     # menor que 0,04, la forma es compatible con camino aunque tenga varias
     # unidades. No se cuenta como superficie agrícola.
-    compacidad_min = float(cfg.get('compacidad_fragmento_min', 0.04))
+    compacidad_min = float(cfg.get('compacidad_fragmento_min', 0.05))
     if estado in ('CAMPO_PROBABLE', 'CAMPO_FRAGMENTO', 'DUDOSO') \
             and campo.compacidad < compacidad_min:
         estado = 'TRAYECTO_DISPERSO'

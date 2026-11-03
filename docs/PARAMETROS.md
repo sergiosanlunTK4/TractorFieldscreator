@@ -45,7 +45,7 @@ etiquetas de retención.
 | `densidad_min_puntos_ha` | 20 | Por debajo: `TRAYECTO_DISPERSO`. |
 | `max_gap_m` | 300 | Hueco máximo dentro de una unidad. |
 | `compacidad_min` | 0,025 | Por debajo: forma lineal (camino), no cuenta hectáreas. |
-| `compacidad_fragmento_min` | 0,04 | Fragmentos por debajo de este valor pasan a `TRAYECTO_DISPERSO`. |
+| `compacidad_fragmento_min` | 0,05 | Fragmentos por debajo de este valor pasan a `TRAYECTO_DISPERSO`. |
 | `grande_area_ha` | 100 | `CAMPO_GRANDE` con revisión pendiente. |
 | `area_descarte_ha` | 0,10 | Descarte de polígonos pequeños. |
 

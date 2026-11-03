@@ -103,7 +103,7 @@ Cada cobertura se evalúa con estas señales, en orden:
 6. **Micro-ruido:** `cuenta_ha < 0,10` y `solidez < 0,40`.
 7. **Campo / fragmento:** con `solidez >= 0,25` y `compacidad >= 0,08`; es
    `CAMPO` si `cuenta_ha >= 0,60` o hay al menos 3 unidades y 40 puntos.
-8. **Fragmento irregular:** si la compacidad final es `< 0,04`, se envía a
+8. **Fragmento irregular:** si la compacidad final es `< 0,05`, se envía a
    `TRAYECTO_DISPERSO` aunque tenga varias unidades.
 
 Las salidas incorporan:
