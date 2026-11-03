@@ -72,10 +72,31 @@ GeoPackage mientras el detector todavía lo tiene bloqueado en Windows:
 El comando también se imprime al final de `campos-tractor` cuando existe
 `QGIS_PYTHON`.
 
+## Integración con AGMS2OC
+
+La función `detectar_campos_por_estado()` devuelve tres grupos listos para
+consumo:
+
+```python
+from campos_tractor import cargar_dataframe, detectar_campos_por_estado
+
+frame = cargar_dataframe(df)
+resultado = detectar_campos_por_estado(frame, 'ruta_001')
+
+resultado['campos']             # CAMPO_PROBABLE
+resultado['campos_fragmento']   # CAMPO_FRAGMENTO
+resultado['campos_dudosos']     # DUDOSO, no cuenta hectáreas
+```
+
+Detalle completo en [`docs/INTEGRACION_AGMS2OC.md`](docs/INTEGRACION_AGMS2OC.md).
+
 ## Capas
 
-- `campos`: campos no dispersos; `cuenta_ha=0` para `DUDOSO`, no-campo y
-  `CAMPO_GRANDE`.
+- `campos`: todos los no dispersos; `cuenta_ha=0` para `DUDOSO`,
+  `NO_ES_CAMPO` y `CAMPO_GRANDE`.
+- `campos_probables`: solo `CAMPO_PROBABLE`.
+- `campos_fragmentos`: solo `CAMPO_FRAGMENTO`.
+- `campos_dudosos`: solo `DUDOSO`; `cuenta_ha=0`.
 - `campos_descartados`: área <0,10 ha.
 - `trayectos_dispersos`: densidad <20 pts/ha, hueco >300 m, forma lineal
   (caminos) o micro-ruido; no suman hectáreas.

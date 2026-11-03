@@ -17,8 +17,9 @@ import time
 RESPUESTAS = ('CORRECTO', 'DEMASIADO_GRANDE', 'PARCIAL_O_PEQUEÑO',
               'FUNDIDO_VARIOS', 'PARTIDO_EN_VARIOS', 'NO_ES_CAMPO', 'NO_SE')
 RESPUESTAS_PARES = ('MISMO_CAMPO', 'CAMPOS_DISTINTOS', 'NO_SE')
-CAPAS = ('campos', 'campos_descartados', 'trayectos_dispersos', 'unidades',
-         'trazas', 'trazas_puntos', 'pares_contiguos')
+CAPAS = ('campos', 'campos_probables', 'campos_fragmentos',
+         'campos_dudosos', 'campos_descartados', 'trayectos_dispersos',
+         'unidades', 'trazas', 'trazas_puntos', 'pares_contiguos')
 
 
 def _capas_disponibles(ruta: Path, intentos: int = 20) -> set[str]:
@@ -68,7 +69,8 @@ def main() -> int:
         if not layer.isValid():
             print(f'Aviso: capa inválida {capa}')
             continue
-        if capa in ('campos', 'campos_descartados') and qml.is_file():
+        if capa in ('campos', 'campos_probables', 'campos_fragmentos',
+                    'campos_dudosos', 'campos_descartados') and qml.is_file():
             layer.loadNamedStyle(str(qml))
         if (capa in ('pares_candidatos', 'pares_contiguos') and
                 layer.fields().indexOf('en_muestra') >= 0):

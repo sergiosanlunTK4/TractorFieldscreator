@@ -13,6 +13,8 @@ from .estados import (CFG_DETECCION, CampoDetectado, ESTADOS,
 from .filtro_mexico import CFG_MEXICO, filtrar_mexico
 from .io import cargar_csv, cargar_dataframe, cargar_por_maquina
 from .metricas import calcular_aspect_ratio
+from .salidas import (detectar_campos_por_estado, resumen_salidas,
+                      separar_por_estado)
 from .unidades import (CFG_CAMPOS, Campo, Unidad, detectar_unidades,
                        fusionar_por_rutas, fusionar_unidades, resumen_campos)
 
@@ -21,9 +23,9 @@ __all__ = [
     'CampoDetectado', 'Campo', 'Unidad', 'ESTADOS',
     'cargar_csv', 'cargar_dataframe', 'cargar_por_maquina',
     'calcular_aspect_ratio', 'clasificar_cobertura_estricta',
-    'detectar_campos', 'detectar_unidades',
+    'detectar_campos', 'detectar_campos_por_estado', 'detectar_unidades',
     'filtrar_mexico', 'fusionar_por_rutas', 'fusionar_unidades',
-    'resumen_campos',
+    'resumen_campos', 'resumen_salidas', 'separar_por_estado',
 ]
 
 __version__ = '0.4.0'

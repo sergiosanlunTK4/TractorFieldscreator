@@ -24,6 +24,7 @@ CSV contrato
 | `estados.py` | Estados por señales geométricas. |
 | `unidades.py` | Unidades temporales, huella bufferizada, compuertas y fusión jerárquica. |
 | `detector.py` | Fachada única `detectar_campos`. |
+| `salidas.py` | Agrupa salidas `campos`, `campos_fragmento` y `campos_dudosos` para AGMS2OC. |
 | `pares.py` | Pares contiguos y clasificación. |
 | `filtro_mexico.py` | Filtro geográfico de respaldo. |
 | `exportar.py`, `utils.py` | GeoPackage, QML, CSV y tablas de revisión. |

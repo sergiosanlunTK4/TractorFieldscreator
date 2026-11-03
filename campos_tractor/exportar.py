@@ -24,9 +24,10 @@ from .utils import (
     etiqueta_archivo, verificar_posicion)
 from .unidades import Unidad
 
-CAPAS = ('campos', 'campos_descartados', 'trayectos_dispersos', 'unidades',
-         'trazas', 'trazas_puntos', 'pares_contiguos', 'puntos_fuera_mexico',
-         'puntos_control', 'cajas_ruta')
+CAPAS = ('campos', 'campos_probables', 'campos_fragmentos',
+         'campos_dudosos', 'campos_descartados', 'trayectos_dispersos',
+         'unidades', 'trazas', 'trazas_puntos', 'pares_contiguos',
+         'puntos_fuera_mexico', 'puntos_control', 'cajas_ruta')
 
 
 def _columnas_campos() -> list[str]:
@@ -112,6 +113,17 @@ def exportar(frames: list, campos: list[Campo], unidades: list[Unidad],
             descartados.append(fila)
         else:
             filas.append(fila)
+
+    # Salidas de consumo directo para AGMS2OC. Incluyen también los campos
+    # pequeños descartados por área para no perder la clasificación.
+    por_estado = {
+        'campos_probables': [f for f in filas + descartados
+                             if f['estado'] == 'CAMPO_PROBABLE'],
+        'campos_fragmentos': [f for f in filas + descartados
+                              if f['estado'] == 'CAMPO_FRAGMENTO'],
+        'campos_dudosos': [f for f in filas + descartados
+                           if f['estado'] == 'DUDOSO'],
+    }
 
     unidades_rows = []
     for u in unidades:
@@ -217,6 +229,12 @@ def exportar(frames: list, campos: list[Campo], unidades: list[Unidad],
     def capas_wgs():
         return {
             'campos': _gdf(filas, 'EPSG:4326', col_campos),
+            'campos_probables': _gdf(por_estado['campos_probables'],
+                                     'EPSG:4326', col_campos),
+            'campos_fragmentos': _gdf(por_estado['campos_fragmentos'],
+                                      'EPSG:4326', col_campos),
+            'campos_dudosos': _gdf(por_estado['campos_dudosos'],
+                                   'EPSG:4326', col_campos),
             'campos_descartados': _gdf(descartados, 'EPSG:4326', col_campos),
             'trayectos_dispersos': _gdf(dispersos, 'EPSG:4326', col_campos),
             'unidades': _gdf(unidades_rows, 'EPSG:4326', col_unidades),
@@ -233,6 +251,12 @@ def exportar(frames: list, campos: list[Campo], unidades: list[Unidad],
     def capas_utm(epsg):
         return {
             'campos': _capa_utm(filas, col_campos, epsg),
+            'campos_probables': _capa_utm(
+                por_estado['campos_probables'], col_campos, epsg),
+            'campos_fragmentos': _capa_utm(
+                por_estado['campos_fragmentos'], col_campos, epsg),
+            'campos_dudosos': _capa_utm(
+                por_estado['campos_dudosos'], col_campos, epsg),
             'campos_descartados': _capa_utm(descartados, col_campos, epsg),
             'trayectos_dispersos': _capa_utm(dispersos, col_campos, epsg),
             'unidades': _capa_utm(unidades_rows, col_unidades, epsg),
@@ -260,6 +284,12 @@ def exportar(frames: list, campos: list[Campo], unidades: list[Unidad],
 
     for nombre_csv, rows, cols in (
             (f'campos_v{nombre}.csv', filas, col_campos),
+            (f'campos_probables_v{nombre}.csv',
+             por_estado['campos_probables'], col_campos),
+            (f'campos_fragmentos_v{nombre}.csv',
+             por_estado['campos_fragmentos'], col_campos),
+            (f'campos_dudosos_v{nombre}.csv',
+             por_estado['campos_dudosos'], col_campos),
             (f'campos_descartados_v{nombre}.csv', descartados, col_campos),
             (f'trayectos_dispersos_v{nombre}.csv', dispersos, col_campos),
             (f'unidades_v{nombre}.csv', unidades_rows, col_unidades),

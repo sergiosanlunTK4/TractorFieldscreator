@@ -26,6 +26,9 @@
   `TRAYECTO_DISPERSO`.
 - Compuerta adicional `compacidad_fragmento_min=0,05`: fragmentos muy
   irregulares pasan a `TRAYECTO_DISPERSO` y no cuentan hectáreas.
+- Salidas de integración para AGMS2OC: `campos_probables`,
+  `campos_fragmentos` y `campos_dudosos` en GeoPackage/CSV, más
+  `detectar_campos_por_estado()` y `separar_por_estado()`.
 - Pares contiguos: |gap| ≤ 600 s y distancia entre inicios ≤ 150 m.
 - Filtro México de respaldo: caja 14,5–32,8 N / -118,5 a -86,5 O, colchón 10 km.
 
