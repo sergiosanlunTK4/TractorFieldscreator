@@ -33,6 +33,8 @@ compuertas:
   max_gap_m: 300
   grande_area_ha: 100
   area_descarte_ha: 0.10
+  ancho_min_campo_m: 25.0
+  aspect_ratio_max: 6.0
 
 base:
   base_min_sesiones: 20

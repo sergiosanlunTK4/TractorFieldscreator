@@ -52,7 +52,10 @@ etiquetas de retención.
 
 | Regla | Condición | Resultado |
 |---|---|---|
-| Camino | `solidez < 0,25` o `compacidad < 0,08`, y `n_unidades <= 2`, `aspect_ratio > 6` o `coherencia >= 0,95` | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
+| Ancho estrecho | `0 < ancho_mbb < 25` y (`aspect_ratio > 2` o `n_unidades <= 2`) | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
+| Elongación extrema | `aspect_ratio >= 8`, salvo `area_ha >= 2` + 10 unidades + `ancho_mbb >= 50` | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
+| Elongación moderada | `aspect_ratio >= 5` y (`ancho_mbb < 35` o `n_unidades <= 3` o `horas < 0,50`) | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
+| Trazado poco sólido | (`solidez < 0,25` o `compacidad < 0,08`) y (`n_unidades <= 2` o `coherencia >= 0,95` o `aspect_ratio > 4`) | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
 | Esfuerzo insuficiente | `n_puntos < 40`, `horas < 0,15` y `densidad < 70` o `n_unidades == 1` | `TRAYECTO_DISPERSO` / `NO_ES_CAMPO` |
 | Micro-ruido | `cuenta_ha < 0,10` y `solidez < 0,40` | `TRAYECTO_DISPERSO` / `RUIDO_COBERTURA` |
 | Campo | `solidez >= 0,25`, `compacidad >= 0,08` y (`cuenta_ha >= 0,60` o 3 unidades + 40 puntos) | `CAMPO` / `TRABAJO_AGRICOLA` |

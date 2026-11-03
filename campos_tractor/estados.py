@@ -73,27 +73,56 @@ def clasificar_cobertura_estricta(
         area_ha: float, n_puntos: int, n_unidades: int, horas: float,
         solidez: float, compacidad: float, densidad_puntos_ha: float,
         coherencia_orientacion: float,
-        aspect_ratio: float = 1.0) -> dict | None:
+        aspect_ratio: float = 1.0,
+        ancho_m: float = 0.0) -> dict | None:
     """Aplica las reglas estrictas de caminos, ruido y campo.
 
     Devuelve ``None`` cuando ninguna regla concluyente aplica; en ese caso el
     llamador conserva la clasificación histórica. El dictamen sigue el contrato
     ``categoria_final / subcategoria / cuenta_ha_valida / metrica_detonante``.
     """
-    # 1. Geometría lineal: camino o acotamiento.
-    if solidez < 0.25 or compacidad < 0.08:
-        if (n_unidades <= 2 or aspect_ratio > 6.0
-                or coherencia_orientacion >= 0.95):
-            metrica = 'solidez' if solidez < 0.25 else 'compacidad'
-            return {
-                'categoria_final': 'TRAYECTO_DISPERSO',
-                'subcategoria': 'NO_ES_CAMPO',
-                'cuenta_ha_valida': False,
-                'metrica_detonante': metrica,
-                'causa': 'forma_lineal',
-                'motivo': ('Geometría extremadamente alargada/poco sólida '
-                           'compatible con camino o acotamiento'),
-            }
+    # 1. Geometría lineal: camino, acotamiento o traslado.
+    # Señales: ancho físico insuficiente (<25m), elongación extrema o moderada,
+    # o bien trazado poco sólido / poco compacto (camino serpenteante).
+    es_camino = False
+    metrica_camino = ''
+
+    # 1a. Ancho estrecho (<25m): incompatible con el ancho útil de un campo agrícola.
+    if 0 < ancho_m < 25.0:
+        if aspect_ratio > 2.0 or n_unidades <= 2:
+            es_camino = True
+            metrica_camino = 'ancho_m'
+
+    # 1b. Elongación extrema (aspect_ratio >= 8.0).
+    elif aspect_ratio >= 8.0:
+        # Solo un campo agrícola muy grande y ancho con muchas unidades puede tener AR >= 8.
+        if not (area_ha >= 2.0 and n_unidades >= 10 and ancho_m >= 50.0):
+            es_camino = True
+            metrica_camino = 'solidez' if solidez < 0.25 else ('compacidad' if compacidad < 0.08 else 'aspect_ratio')
+
+    # 1c. Elongación moderada (aspect_ratio >= 5.0) con características de camino/traslado.
+    elif aspect_ratio >= 5.0:
+        if (0 < ancho_m < 35.0) or n_unidades <= 3 or horas < 0.50:
+            es_camino = True
+            metrica_camino = 'solidez' if solidez < 0.25 else ('compacidad' if compacidad < 0.08 else 'aspect_ratio')
+
+    # 1d. Trazado poco sólido o poco compacto (camino curvo/serpenteante o acotamiento).
+    elif solidez < 0.25 or compacidad < 0.08:
+        if (n_unidades <= 2 or coherencia_orientacion >= 0.95 or aspect_ratio > 4.0):
+            if ancho_m < 35.0 or n_unidades <= 2 or horas < 0.30:
+                es_camino = True
+                metrica_camino = 'solidez' if solidez < 0.25 else 'compacidad'
+
+    if es_camino:
+        return {
+            'categoria_final': 'TRAYECTO_DISPERSO',
+            'subcategoria': 'NO_ES_CAMPO',
+            'cuenta_ha_valida': False,
+            'metrica_detonante': metrica_camino,
+            'causa': 'forma_lineal',
+            'motivo': ('Geometría extremadamente alargada o estrecha '
+                       'compatible con camino o acotamiento'),
+        }
     # 2. Esfuerzo insuficiente: pocos puntos y menos de 9 minutos.
     if n_puntos < 40 and horas < 0.15:
         if densidad_puntos_ha < 70 or n_unidades == 1:

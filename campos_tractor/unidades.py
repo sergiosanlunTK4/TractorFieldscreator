@@ -19,7 +19,7 @@ from shapely.ops import transform as shapely_transform, unary_union
 from ._compat import _epsg_utm
 from .estados import (CFG_DETECCION, _clasificar,
                       clasificar_cobertura_estricta)
-from .metricas import calcular_aspect_ratio
+from .metricas import calcular_aspect_ratio, calcular_dimensiones_mbb
 from .proyeccion import invertir_xy, origen_desde_primera
 
 CFG_CAMPOS = {
@@ -56,6 +56,8 @@ CFG_CAMPOS = {
     'max_gap_m': 300.0,
     'grande_area_ha': 100.0,
     'area_descarte_ha': 0.10,
+    'ancho_min_campo_m': 25.0,
+    'aspect_ratio_max': 6.0,
     # Base/patio.
     'base_min_sesiones': 20,
     'base_min_dias': 15,
@@ -175,6 +177,8 @@ class Campo:
     subcategoria: str = ''
     metrica_detonante: str = ''
     cuenta_ha_valida: bool = False
+    ancho_mbb: float = 0.0
+    largo_mbb: float = 0.0
     version_algoritmo: str = 'campos-tractor'
 
     def to_dict(self) -> dict:
@@ -207,6 +211,8 @@ class Campo:
             'solidez': round(float(self.solidez), 3),
             'compacidad': round(float(self.compacidad), 3),
             'aspect_ratio': round(float(self.aspect_ratio), 3),
+            'ancho_mbb': round(float(self.ancho_mbb), 1),
+            'largo_mbb': round(float(self.largo_mbb), 1),
             'subcategoria': self.subcategoria,
             'metrica_detonante': self.metrica_detonante,
             'cuenta_ha_valida': int(bool(self.cuenta_ha_valida)),
@@ -579,7 +585,7 @@ def _crear_campo(unidades: list[Unidad], cfg: dict) -> Campo | None:
     density = n_puntos / metricas['area_ha'] if metricas['area_ha'] > 0 else 0.0
     campos_rutas = sorted({u.ruta_hash for u in unidades})
     principal = max(unidades, key=lambda u: u.n_puntos).ruta_hash
-    aspecto = calcular_aspect_ratio(geom_utm)
+    ancho_m, largo_m, aspecto = calcular_dimensiones_mbb(geom_utm)
     campo = Campo(
         id_estable=_hash('|'.join(sorted(u.id_unidad for u in unidades))),
         campo_id=0, geometry=geom_wgs, geometry_utm=geom_utm, epsg_utm=epsg,
@@ -591,6 +597,8 @@ def _crear_campo(unidades: list[Unidad], cfg: dict) -> Campo | None:
         area_ha=metricas['area_ha'], perimetro_m=float(geom_utm.length),
         solidez=metricas['solidez'], compacidad=metricas['compacidad'],
         aspect_ratio=aspecto,
+        ancho_mbb=ancho_m,
+        largo_mbb=largo_m,
         orientacion=orientacion, coherencia=coherencia,
         densidad_puntos_ha=density, max_gap_m=max_gap,
         speed_p50=_pondera(unidades, 'speed_p50'),
@@ -634,6 +642,7 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
         densidad_puntos_ha=campo.densidad_puntos_ha,
         coherencia_orientacion=campo.coherencia,
         aspect_ratio=campo.aspect_ratio,
+        ancho_m=campo.ancho_mbb,
     )
     if dictamen is not None:
         campo.subcategoria = dictamen['subcategoria']
@@ -642,6 +651,18 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
             campo.estado = 'TRAYECTO_DISPERSO'
             campo.motivos = [dictamen['motivo']]
             campo.causa_fragmento = dictamen['causa']
+            campo.parece_campo = 'NO'
+            return
+    # Compuerta de ancho estrecho: un trazado de ancho < 25m es un camino.
+    ancho_min = float(cfg.get('ancho_min_campo_m', 25.0))
+    if campo.ancho_mbb > 0 and campo.ancho_mbb < ancho_min:
+        if campo.aspect_ratio > 2.0 or campo.n_unidades <= 2:
+            campo.estado = 'TRAYECTO_DISPERSO'
+            campo.motivos = [f'ancho estrecho ({campo.ancho_mbb:.1f} m '
+                             f'< {ancho_min:.0f} m): posible camino']
+            campo.causa_fragmento = 'forma_lineal'
+            campo.subcategoria = 'NO_ES_CAMPO'
+            campo.metrica_detonante = 'ancho_m'
             campo.parece_campo = 'NO'
             return
     # Compuerta de forma histórica: un trazado alargado y estrecho es un
@@ -723,9 +744,14 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
             f'?rea {campo.area_ha:.0f} ha > {cfg["grande_area_ha"]:.0f} ha: '
             'revisi?n humana antes de contar hect?reas']
     else:
-        campo.cuenta_ha = campo.area_ha if estado != 'NO_ES_CAMPO' else 0.0
-    campo.cuenta_ha_valida = bool(campo.cuenta_ha > 0
-                                  and estado != 'TRAYECTO_DISPERSO')
+        # Solo los estados de trabajo agrícola cuentan hectáreas. DUDOSO y
+        # NO_ES_CAMPO quedan visibles para revisión, pero no suman superficie.
+        campo.cuenta_ha = (campo.area_ha
+                           if estado in ('CAMPO_PROBABLE', 'CAMPO_FRAGMENTO')
+                           else 0.0)
+    campo.cuenta_ha_valida = bool(
+        campo.cuenta_ha > 0
+        and estado in ('CAMPO_PROBABLE', 'CAMPO_FRAGMENTO'))
     consistencia = min(1.0, campo.n_unidades / 2.0)
     working = campo.frac_working if campo.state_cobertura >= 0.20 else 0.5
     campo.confianza = max(0.0, min(1.0,

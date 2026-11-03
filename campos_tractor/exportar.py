@@ -6,7 +6,10 @@ from pathlib import Path
 import random
 import sqlite3
 
-import fiona
+try:
+    import fiona
+except ImportError:
+    fiona = None
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -34,7 +37,7 @@ def _columnas_campos() -> list[str]:
             'requiere_revision', 'cuenta_ha', 'diagnostico_grande',
             'parece_campo', 'subcategoria', 'metrica_detonante',
             'cuenta_ha_valida', 'version_algoritmo', 'epsg_utm', 'solidez',
-            'compacidad', 'aspect_ratio', 'densidad_puntos_ha',
+            'compacidad', 'aspect_ratio', 'ancho_mbb', 'densidad_puntos_ha',
             'coherencia_orientacion',
             'max_gap_m', 'orientacion', 'speed_p50', 'speed_p90',
             'state_cobertura', 'frac_working', 'frac_idle', 'frac_transport',
@@ -279,7 +282,20 @@ def exportar(frames: list, campos: list[Campo], unidades: list[Unidad],
                 if 'utm' in ruta.name:
                     epsg = int(ruta.stem.split('utm')[-1])
                     d = dif.to_crs(epsg)
-                if 'diferencias' in fiona.listlayers(ruta):
+                tiene_dif = False
+                if fiona is not None:
+                    try:
+                        tiene_dif = 'diferencias' in fiona.listlayers(ruta)
+                    except Exception:
+                        tiene_dif = False
+                if not tiene_dif:
+                    try:
+                        with sqlite3.connect(ruta) as con:
+                            cur = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='diferencias'")
+                            tiene_dif = bool(cur.fetchone())
+                    except Exception:
+                        tiene_dif = False
+                if tiene_dif:
                     with sqlite3.connect(ruta) as con:
                         con.execute('DROP TABLE diferencias')
                 d.to_file(ruta, layer='diferencias', driver='GPKG')

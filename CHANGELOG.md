@@ -19,6 +19,11 @@
   un buffer fijo de ~22 m; se eliminan decenas de miles de pares falsos.
 - CLI: omite archivos sin puntos dentro de México y los reporta en
   `archivos_omitidos`.
+- Solo `CAMPO_PROBABLE` y `CAMPO_FRAGMENTO` cuentan hectáreas. `DUDOSO` se
+  conserva para revisión con `cuenta_ha=0`, evitando sumar superficie incierta.
+- Clasificación por dimensiones del MBB: `ancho_mbb` y `largo_mbb` en metros.
+  Trazas con ancho <25 m, elongación extrema o moderada se envían a
+  `TRAYECTO_DISPERSO`.
 - Pares contiguos: |gap| ≤ 600 s y distancia entre inicios ≤ 150 m.
 - Filtro México de respaldo: caja 14,5–32,8 N / -118,5 a -86,5 O, colchón 10 km.
 

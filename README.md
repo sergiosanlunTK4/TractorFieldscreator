@@ -74,7 +74,8 @@ El comando también se imprime al final de `campos-tractor` cuando existe
 
 ## Capas
 
-- `campos`: campos no dispersos; `cuenta_ha=0` para no-campo y `CAMPO_GRANDE`.
+- `campos`: campos no dispersos; `cuenta_ha=0` para `DUDOSO`, no-campo y
+  `CAMPO_GRANDE`.
 - `campos_descartados`: área <0,10 ha.
 - `trayectos_dispersos`: densidad <20 pts/ha, hueco >300 m, forma lineal
   (caminos) o micro-ruido; no suman hectáreas.
@@ -89,26 +90,36 @@ El comando también se imprime al final de `campos-tractor` cuando existe
 
 Cada cobertura se evalúa con estas señales, en orden:
 
-1. **Camino / acotamiento:** `solidez < 0,25` o `compacidad < 0,08`, y además
-   `n_unidades <= 2`, `aspect_ratio > 6` o `coherencia >= 0,95`.
-2. **Esfuerzo insuficiente:** `n_puntos < 40` y `horas < 0,15`, con
+1. **Camino / acotamiento por ancho:** `ancho_mbb < 25 m` y
+   `aspect_ratio > 2` o `n_unidades <= 2`.
+2. **Elongación extrema:** `aspect_ratio >= 8`, salvo campos grandes
+   (`area_ha >= 2`, al menos 10 unidades y `ancho_mbb >= 50 m`).
+3. **Elongación moderada:** `aspect_ratio >= 5` con `ancho_mbb < 35 m`,
+   `n_unidades <= 3` o `horas < 0,50`.
+4. **Trazado poco sólido:** `solidez < 0,25` o `compacidad < 0,08` con
+   `n_unidades <= 2`, `coherencia >= 0,95` o `aspect_ratio > 4`.
+5. **Esfuerzo insuficiente:** `n_puntos < 40` y `horas < 0,15`, con
    `densidad < 70 pts/ha` o una sola unidad.
-3. **Micro-ruido:** `cuenta_ha < 0,10` y `solidez < 0,40`.
-4. **Campo / fragmento:** con `solidez >= 0,25` y `compacidad >= 0,08`; es
+6. **Micro-ruido:** `cuenta_ha < 0,10` y `solidez < 0,40`.
+7. **Campo / fragmento:** con `solidez >= 0,25` y `compacidad >= 0,08`; es
    `CAMPO` si `cuenta_ha >= 0,60` o hay al menos 3 unidades y 40 puntos.
 
 Las salidas incorporan:
 
 - `aspect_ratio`: largo/ancho del Minimum Bounding Box.
+- `ancho_mbb`: ancho del MBB en metros; señal para separar trazas lineales.
 - `subcategoria`: `TRABAJO_AGRICOLA`, `NO_ES_CAMPO` o `RUIDO_COBERTURA`.
 - `metrica_detonante`: señal que decidió el filtro.
-- `cuenta_ha_valida`: si la cobertura cuenta hectáreas.
+- `cuenta_ha_valida`: si la cobertura cuenta hectáreas. Solo
+  `CAMPO_PROBABLE` y `CAMPO_FRAGMENTO` cuentan; `DUDOSO` queda para revisión
+  con `cuenta_ha = 0`.
 
 ## Parámetros
 
 `config_campos.yaml` contiene tiempo, forma, fusión, compuertas y base. Los
 valores por defecto están congelados en `campos_tractor/unidades.py:CFG_CAMPOS`.
-El ancho de trabajo no participa en ninguna etapa.
+No se estima el ancho de trabajo de la máquina; `ancho_mbb` es solo una señal
+geométrica del polígono para distinguir trazas lineales.
 
 ## Pruebas
 

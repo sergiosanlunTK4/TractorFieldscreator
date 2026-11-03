@@ -690,8 +690,18 @@ def comparar_versiones(ruta_a: Path, ruta_b: Path) -> gpd.GeoDataFrame:
 def agregar_diferencias(gpkg: Path, diferencias: gpd.GeoDataFrame) -> None:
     if diferencias is None or len(diferencias) == 0:
         return
-    import fiona
-    if 'diferencias' in fiona.listlayers(gpkg):
+    tiene_dif = False
+    try:
+        import fiona
+        tiene_dif = 'diferencias' in fiona.listlayers(gpkg)
+    except Exception:
+        try:
+            with sqlite3.connect(gpkg) as conexion:
+                cur = conexion.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='diferencias'")
+                tiene_dif = bool(cur.fetchone())
+        except Exception:
+            tiene_dif = False
+    if tiene_dif:
         with sqlite3.connect(gpkg) as conexion:
             conexion.execute('DROP TABLE diferencias')
     diferencias.to_file(gpkg, layer='diferencias', driver='GPKG')

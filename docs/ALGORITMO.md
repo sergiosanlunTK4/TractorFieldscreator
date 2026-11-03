@@ -50,6 +50,8 @@ CSV contrato
 4. Compacidad mínima 0,025: una traza alargada y estrecha se trata como
    `TRAYECTO_DISPERSO` (camino), no como campo.
 5. `CAMPO_GRANDE` >100 ha requiere revisión; `cuenta_ha=0`.
+6. Solo `CAMPO_PROBABLE` y `CAMPO_FRAGMENTO` cuentan hectáreas. `DUDOSO`
+   permanece visible para revisión con `cuenta_ha=0`.
 
 ## Clasificación estricta
 

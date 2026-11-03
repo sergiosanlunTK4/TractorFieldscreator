@@ -24,14 +24,14 @@ from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
 
-def calcular_aspect_ratio(geometria: BaseGeometry | None) -> float:
-    """Relación largo/ancho del Minimum Bounding Box (MBB).
+def calcular_dimensiones_mbb(geometria: BaseGeometry | None) -> tuple[float, float, float]:
+    """Dimensiones (ancho, largo, aspect_ratio) del Minimum Bounding Box (MBB).
 
-    ``1.0`` para geometrías vacías o sin extensión suficiente. El resultado se
-    usa como señal de forma: valores altos indican trazas lineales (caminos).
+    En coordenadas métricas (UTM), ancho y largo representan metros.
+    ``(0.0, 0.0, 1.0)`` para geometrías vacías o sin extensión suficiente.
     """
     if geometria is None or geometria.is_empty:
-        return 1.0
+        return 0.0, 0.0, 1.0
     mrr = geometria.minimum_rotated_rectangle
     if isinstance(mrr, Polygon):
         coords = list(mrr.exterior.coords)
@@ -41,9 +41,18 @@ def calcular_aspect_ratio(geometria: BaseGeometry | None) -> float:
             s2 = float(np.linalg.norm(
                 np.array(coords[1][:2]) - np.array(coords[2][:2])))
             min_s, max_s = min(s1, s2), max(s1, s2)
-            if min_s > 0:
-                return float(max_s / min_s)
-    return 1.0
+            ar = float(max_s / min_s) if min_s > 0 else 1.0
+            return min_s, max_s, ar
+    return 0.0, 0.0, 1.0
+
+
+def calcular_aspect_ratio(geometria: BaseGeometry | None) -> float:
+    """Relación largo/ancho del Minimum Bounding Box (MBB).
+
+    ``1.0`` para geometrías vacías o sin extensión suficiente. El resultado se
+    usa como señal de forma: valores altos indican trazas lineales (caminos).
+    """
+    return calcular_dimensiones_mbb(geometria)[2]
 
 
 def geometria_valida(geom: BaseGeometry | None) -> BaseGeometry | None:
