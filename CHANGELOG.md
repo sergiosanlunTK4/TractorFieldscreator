@@ -24,6 +24,8 @@
 - Clasificación por dimensiones del MBB: `ancho_mbb` y `largo_mbb` en metros.
   Trazas con ancho <25 m, elongación extrema o moderada se envían a
   `TRAYECTO_DISPERSO`.
+- Compuerta adicional `compacidad_fragmento_min=0,04`: fragmentos muy
+  irregulares pasan a `TRAYECTO_DISPERSO` y no cuentan hectáreas.
 - Pares contiguos: |gap| ≤ 600 s y distancia entre inicios ≤ 150 m.
 - Filtro México de respaldo: caja 14,5–32,8 N / -118,5 a -86,5 O, colchón 10 km.
 

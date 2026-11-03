@@ -58,6 +58,7 @@ CFG_CAMPOS = {
     'area_descarte_ha': 0.10,
     'ancho_min_campo_m': 25.0,
     'aspect_ratio_max': 6.0,
+    'compacidad_fragmento_min': 0.04,
     # Base/patio.
     'base_min_sesiones': 20,
     'base_min_dias': 15,
@@ -702,6 +703,18 @@ def _clasificar_campo(campo: Campo, cfg: dict) -> None:
             and estado != 'NO_ES_CAMPO'):
         estado = 'CAMPO_PROBABLE'
         motivos = [dictamen['motivo']]
+    # Compuerta adicional para fragmentos muy irregulares: si la compacidad es
+    # menor que 0,04, la forma es compatible con camino aunque tenga varias
+    # unidades. No se cuenta como superficie agrícola.
+    compacidad_min = float(cfg.get('compacidad_fragmento_min', 0.04))
+    if estado in ('CAMPO_PROBABLE', 'CAMPO_FRAGMENTO', 'DUDOSO') \
+            and campo.compacidad < compacidad_min:
+        estado = 'TRAYECTO_DISPERSO'
+        motivos = [f'compacidad {campo.compacidad:.3f} < '
+                   f'{compacidad_min:.2f}: posible camino']
+        campo.causa_fragmento = 'forma_lineal'
+        campo.subcategoria = 'NO_ES_CAMPO'
+        campo.metrica_detonante = 'compacidad'
     # Base/patio.
     evidencias = []
     if campo.n_sesiones >= int(cfg['base_min_sesiones']):
